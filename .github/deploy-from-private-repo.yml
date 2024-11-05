@@ -1,0 +1,65 @@
+# Get private repo and publish it (how exactly is WIP)
+name: Deploy static content from private repo to Pages (with path obfuscation)
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo ${{ secrets.PATH_SECRET }}
+    - name: Checkout private repository
+      uses: actions/checkout@v4
+      with:
+        repository: DHBern/wellcome-schreiber
+        ref: main
+        token: ${{ secrets.PAT }}
+    - run: mkdir ${{ secrets.PATH_SECRET }} && mv ./wellcome ${{ secrets.PATH_SECRET }}
+    - name: create string
+      run: |
+        (cat << EOF
+        <h1>Zugriffsschutz</h1>
+        <p>Die aufgerufene Seite ist noch nicht frei zugänglich.</p>
+        <p>Falls Sie einen gültigen Zugriffsschlüssel haben, ersetzen Sie das URL-Pfadsegment <code 
+        style="color:white;background-color:teal;">/wellcome/</code> in der Adresszeile durch <code 
+        style="color:white;background-color:teal;">/ZUGRIFFSSCHLUESSEL/wellcome/</code>, um die 
+        Seite aufzurufen.</p>
+        EOF
+        ) > ./404.html
+    # directory listing
+    - name: Generate Directory Listings
+      uses: jayanta525/github-pages-directory-listing@v4.0.0
+      with:
+        FOLDER: ${{ secrets.PATH_SECRET }} + "/wellcome" #directory to generate index        
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        # Upload dist directory
+        path: ./
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
