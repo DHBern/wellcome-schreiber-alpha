@@ -29,7 +29,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-    - run: echo ${{ secrets.PATH_SECRET }}
     - name: Checkout private repository
       uses: actions/checkout@v4
       with:
@@ -37,7 +36,7 @@ jobs:
         ref: main
         token: ${{ secrets.PAT }}
     - run: mkdir ${{ secrets.PATH_SECRET }} && mv ./wellcome ${{ secrets.PATH_SECRET }}
-    - name: create string
+    - name: create 404 page (poor man's access protection)
       run: |
         (cat << EOF
         <h1>Zugriffsschutz</h1>
@@ -49,7 +48,7 @@ jobs:
         EOF
         ) > ./404.html
     # directory listing
-    - name: Generate Directory Listings
+    - name: Generate Directory Listings (for wellcome path)
       uses: jayanta525/github-pages-directory-listing@v4.0.0
       with:
         FOLDER: ${{ secrets.PATH_SECRET }} + "/wellcome" #directory to generate index        
